@@ -1,9 +1,0 @@
-{
-  "files.exclude": {
-    "README.md": true, 
-    ".gitignore":false,
-  
-  },
-  "python.linting.pylintEnabled": true,
-  "python.linting.enabled": true
-}
