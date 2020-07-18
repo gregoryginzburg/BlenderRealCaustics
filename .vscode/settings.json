@@ -1,6 +1,7 @@
 {
   "files.exclude": {
-    "README.md": true,  
+    "README.md": true, 
+  
   },
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true
