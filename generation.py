@@ -73,6 +73,6 @@ def register():
 
 
 def unregister():
-    # del bpy.types.Scene.caustics_settings
+    del bpy.types.Scene.caustics_settings
     for blender_class in classes:
         bpy.utils.unregister_class(blender_class)

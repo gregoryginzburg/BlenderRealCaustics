@@ -11,14 +11,13 @@ bl_info = {
     "blender": (2, 80, 0),
     "version": (0, 0, 1),
     "location": "dwadwa",
-    "warning": "dwadwad",
     "category": "Render",
     "doc_url": "dawdwa",
     "tracker_url": "hdr",
 }
 
 
-def register():
+def register():   
     ui.register()
     generation.register()
     select_objects.register()
