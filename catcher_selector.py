@@ -177,13 +177,16 @@ classes = [
     REAL_CAUSTICS_OT_refresh_list_of_catchers,
     REAL_CAUSTICS_OT_remove_all_catchers,
 ]
-
+def update_auto_select_catchers_is_on(self, context):
+    self.auto_selector_catchers_is_expanded = not self.auto_select_catchers_is_on
+    return None
 def register():   
     for blender_class in classes:
         bpy.utils.register_class(blender_class)
     bpy.types.Scene.catcher_meshes = CollectionProperty(type = CatcherCollection, options = {"HIDDEN"})
     bpy.types.Scene.catcher_mesh_idx = IntProperty(default = 0, options = {"HIDDEN"})
-    bpy.types.Scene.catcher_to_add = PointerProperty(type = bpy.types.Object, options = {"HIDDEN"})
+    bpy.types.Scene.auto_select_catchers_is_on = BoolProperty(default = True, update = update_auto_select_catchers_is_on)
+    bpy.types.Scene.auto_selector_catchers_is_expanded = BoolProperty(default = False) 
     
 
 def unregister():
@@ -191,5 +194,6 @@ def unregister():
         bpy.utils.unregister_class(blender_class)
     del bpy.types.Scene.catcher_meshes
     del bpy.types.Scene.catcher_mesh_idx
-    del bpy.types.Scene.catcher_to_add 
+    del bpy.types.Scene.auto_select_catchers_is_on
+    del bpy.types.Scene.auto_selector_catchers_is_expanded  
   

@@ -69,49 +69,61 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         # Auto-select Button
         col = box.column()
         col.scale_y = 1.2
-        col.operator("real_caustics.auto_select_objects")
-        col.separator(factor = 0.5)
-        # UIList - Caustic Objects
-        col = box.column(align = True)
         row = col.row()
-        row.template_list("OBJECT_UL_caustic_meshes", "caustic_meshes", scene, "caustic_meshes", 
-            scene, "caustic_mesh_idx", rows = 2)
-        # Buttons: add and remove mesh from list
-        col = row.column(align = True)
-        col.operator("real_caustics.add_mesh", text = "", icon = "ADD")
-        col.operator("real_caustics.remove_mesh", text = "", icon = "REMOVE")
-        col.separator(factor = 1.5)
-        col.operator("real_caustics.refresh_list", text = "", icon = "FILE_REFRESH")
-        # Select mesh
-        col = box.column(align = True)
-        row = col.row()
-        row.prop(scene, "mesh_to_add", text = "")
-        row.operator("real_caustics.append_selected_meshes", text = "Add Selected", icon = "PLUS")
-        # Remove All Objects
-        col.separator(factor = 0.8)
-        col.operator("real_caustics.remove_all_objects", text = "Remove All Objects", icon = "CANCEL")
+        if context.scene.auto_selector_meshes_is_expanded:
+            row.prop(context.scene, "auto_selector_meshes_is_expanded", 
+                icon = "TRIA_DOWN",
+                icon_only = True, emboss = False)
+        else:
+            row.prop(context.scene, "auto_selector_meshes_is_expanded", 
+                icon = "TRIA_RIGHT",
+                icon_only = True, emboss = False)
+
+        row.prop(context.scene, "auto_select_meshes_is_on", text = "Auto-Select Objects", toggle = 1)
         
-        # Object Settings Selector
-        col = box.column()
-        col.label(text = "Object Settings:")
-        col.separator(factor = 0.3)
-        row = col.row()
-        row.prop_search(context.scene, "selected_object_name", scene, "caustic_meshes", text = "", icon = "MESH_DATA")
-        row.operator("real_caustics.reset_object_settings", text = "Reset Object Settings", icon = "LOOP_BACK")
-        col.separator(factor = 0.5)      
-        if scene.selected_object:
-            # Object Settings
-            split = col.split()
-            # Labels - 1 collumn
-            col = split.column()
-            col.label(text = "Color")
-            col.label(text = "Roughness")
-            col.label(text = "Ior")
-            # Props - 2 collumn
-            col = split.column()
-            col.prop(scene.selected_object.object_settings, "color")
-            col.prop(scene.selected_object.object_settings, "roughness")
-            col.prop(scene.selected_object.object_settings, "ior")
+        # UIList - Caustic Objects
+        if context.scene.auto_selector_meshes_is_expanded:
+            col.separator(factor = 0.5) 
+            col = box.column(align = True)
+            row = col.row()
+            row.template_list("OBJECT_UL_caustic_meshes", "caustic_meshes", scene, "caustic_meshes", 
+                scene, "caustic_mesh_idx", rows = 2)
+            # Buttons: add and remove mesh from list
+            col = row.column(align = True)
+            col.operator("real_caustics.add_mesh", text = "", icon = "ADD")
+            col.operator("real_caustics.remove_mesh", text = "", icon = "REMOVE")
+            col.separator(factor = 1.5)
+            col.operator("real_caustics.refresh_list", text = "", icon = "FILE_REFRESH")
+            # Select mesh
+            col = box.column(align = True)
+            row = col.row()
+            # Add objects
+            row.operator("real_caustics.append_selected_meshes", text = "Add Selected", icon = "PLUS")
+            # Remove All Objects
+            row.operator("real_caustics.remove_all_objects", text = "Remove All Objects", icon = "CANCEL")
+            
+            
+            # Object Settings Selector
+            col = box.column()
+            col.label(text = "Object Settings:")
+            col.separator(factor = 0.3)
+            row = col.row()
+            row.prop_search(context.scene, "selected_object_name", scene, "caustic_meshes", text = "", icon = "MESH_DATA")
+            row.operator("real_caustics.reset_object_settings", text = "Reset Object Settings", icon = "LOOP_BACK")
+            col.separator(factor = 0.5)      
+            if scene.selected_object:
+                # Object Settings
+                split = col.split()
+                # Labels - 1 collumn
+                col = split.column()
+                col.label(text = "Color")
+                col.label(text = "Roughness")
+                col.label(text = "Ior")
+                # Props - 2 collumn
+                col = split.column()
+                col.prop(scene.selected_object.object_settings, "color")
+                col.prop(scene.selected_object.object_settings, "roughness")
+                col.prop(scene.selected_object.object_settings, "ior")
 
         # Label Object selector
         col = layout.column()
@@ -120,27 +132,41 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         box = layout.box()
         col = box.column()
         col.scale_y = 1.2
-        col.operator("real_caustics.auto_select_catchers")
-        col.separator(factor = 0.5)
-        # UIList - Caustic Objects
-        col = box.column(align = True)
         row = col.row()
-        row.template_list("OBJECT_UL_caustic_catchers", "", scene, "catcher_meshes", 
-            scene, "catcher_mesh_idx", rows = 2)
-        # Buttons: add and remove mesh from list
-        col = row.column(align = True)
-        col.operator("real_caustics.add_catcher", text = "", icon = "ADD")
-        col.operator("real_caustics.remove_catcher", text = "", icon = "REMOVE")
-        col.separator(factor = 1.5)
-        col.operator("real_caustics.refresh_list_of_catchers", text = "", icon = "FILE_REFRESH")
-        # Select mesh
-        col = box.column(align = True)
-        row = col.row()
-        row.prop(scene, "catcher_to_add", text = "")
-        row.operator("real_caustics.append_selected_catchers", text = "Add Selected", icon = "PLUS")
-        # Remove All Objects
-        col.separator(factor = 0.8)
-        col.operator("real_caustics.remove_all_catchers", text = "Remove All Objects", icon = "CANCEL")
+
+        if context.scene.auto_selector_catchers_is_expanded:
+            row.prop(context.scene, "auto_selector_catchers_is_expanded", 
+                icon = "TRIA_DOWN",
+                icon_only = True, emboss = False)
+        else:
+            row.prop(context.scene, "auto_selector_catchers_is_expanded", 
+                icon = "TRIA_RIGHT",
+                icon_only = True, emboss = False)
+
+        row.prop(context.scene, "auto_select_catchers_is_on", text = "Auto-Select Objects", toggle = 1)
+        if context.scene.auto_selector_catchers_is_expanded:
+            col.separator(factor = 0.5)
+            # UIList - Caustic Objects
+            col = box.column(align = True)
+            row = col.row()
+            row.template_list("OBJECT_UL_caustic_catchers", "", scene, "catcher_meshes", 
+                scene, "catcher_mesh_idx", rows = 2)
+            # Buttons: add and remove mesh from list
+            col = row.column(align = True)
+            col.operator("real_caustics.add_catcher", text = "", icon = "ADD")
+            col.operator("real_caustics.remove_catcher", text = "", icon = "REMOVE")
+            col.separator(factor = 1.5)
+            col.operator("real_caustics.refresh_list_of_catchers", text = "", icon = "FILE_REFRESH")
+            # Select mesh
+            col = box.column(align = True)
+            row = col.row()
+            # Add and remove
+            row.operator("real_caustics.append_selected_catchers", text = "Add Selected", icon = "PLUS")
+            row.operator("real_caustics.remove_all_catchers", text = "Remove All Objects", icon = "CANCEL")
+        
+  
+        
+        
         
 
 

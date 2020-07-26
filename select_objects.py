@@ -222,7 +222,7 @@ class ObjectSettings(bpy.types.PropertyGroup):
     color: FloatVectorProperty(
         name = "",
         description = "",
-        default = (0.0, 0.0, 0.0),
+        default = (0.8, 0.8, 0.8),
         min = 0.0,
         max = 1.0,
         subtype = 'COLOR',
@@ -256,17 +256,21 @@ classes = [
     ObjectSettings,
     REAL_CAUSTICS_OT_reset_object_settings,
 ]
-
+def update_auto_select_meshes_is_on(self, context):
+    self.auto_selector_meshes_is_expanded = not self.auto_select_meshes_is_on
+    return None
+      
 def register():
     
     for blender_class in classes:
         bpy.utils.register_class(blender_class)
     bpy.types.Scene.caustic_meshes = CollectionProperty(type = MeshCollection, options = {"HIDDEN"})
     bpy.types.Scene.caustic_mesh_idx = IntProperty(default = 0, options = {"HIDDEN"})
-    bpy.types.Scene.mesh_to_add = PointerProperty(type = bpy.types.Object, options = {"HIDDEN"})
     bpy.types.Object.object_settings = PointerProperty(type = ObjectSettings, options = {"HIDDEN"})
     bpy.types.Scene.selected_object_name = StringProperty(default = "", options = {'HIDDEN'}, update = update_selected_settings_object)
     bpy.types.Scene.selected_object = PointerProperty(type = bpy.types.Object, options = {'HIDDEN'})
+    bpy.types.Scene.auto_select_meshes_is_on = BoolProperty(default = True, update = update_auto_select_meshes_is_on)
+    bpy.types.Scene.auto_selector_meshes_is_expanded = BoolProperty(default = False) 
     
 
 def unregister():
@@ -274,8 +278,9 @@ def unregister():
         bpy.utils.unregister_class(blender_class)
     del bpy.types.Scene.caustic_meshes
     del bpy.types.Scene.caustic_mesh_idx 
-    del bpy.types.Scene.mesh_to_add
     del bpy.types.Object.object_settings
     del bpy.types.Scene.selected_object_name
-    del bpy.types.Scene.selected_object 
+    del bpy.types.Scene.selected_object
+    del bpy.types.Scene.auto_select_meshes_is_on
+    del bpy.types.Scene.auto_selector_meshes_is_expanded  
   
