@@ -5,7 +5,7 @@ def add_mesh(scene, mesh):
     """ Adds Mesh to Caustic Objects"""
     if bpy.data.collections.find(str(id(mesh))) != -1: 
         return None
-    bpy.data.collections.find(str(id(mesh)))
+
     bpy.data.collections.new(str(id(mesh)))
     new_mesh = scene.caustic_meshes.add()
     new_mesh.mesh = mesh
@@ -29,7 +29,8 @@ def alert(context):
 
     context.window_manager.popup_menu(draw, title = "No object with this name", icon = 'ERROR')
 
-
+def set_object_settings():
+    pass
 def update_selected_settings_object(self, context):
     try:
         ob = bpy.data.objects[self.selected_object_name]
@@ -38,6 +39,7 @@ def update_selected_settings_object(self, context):
         self.selected_object = None
         return None         
     self.selected_object = ob
+    set_object_settings()
     return None
 
 
@@ -49,6 +51,7 @@ class REAL_CAUSTICS_OT_auto_select_objects(bpy.types.Operator):
     def execute(self, context):
         all_objects = bpy.data.objects
         scene = context.scene
+        bpy.ops.real_caustics.refresh_list('INVOKE_DEFAULT')
         for bl_object in all_objects:
             if not bl_object.active_material:
                 continue 
@@ -63,7 +66,6 @@ class REAL_CAUSTICS_OT_auto_select_objects(bpy.types.Operator):
                     if ((inputs[4].default_value > 0.95 or inputs[15].default_value > 0.95)
                          and inputs[7].default_value < 0.1):
                         add_mesh(scene, bl_object)
-                        print(inputs[7].default_value)
                     else:
                         continue
                 elif node.bl_idname == "ShaderNodeBsdfGlass":
@@ -149,7 +151,8 @@ class REAL_CAUSTICS_OT_refresh_list(bpy.types.Operator):
         for ob in object_list:
             if ob.mesh.users == 1 or (ob.mesh.users == 2 and ob.mesh.use_fake_user):
                 coll_name = str(id(ob.mesh))  
-                bpy.data.collections.remove(bpy.data.collections[coll_name])         
+                bpy.data.collections.remove(bpy.data.collections[coll_name])
+                bpy.data.objects.remove(ob.mesh)          
             else:
                 new_object_list.append(ob.mesh) 
         object_list.clear()
@@ -180,6 +183,16 @@ class REAL_CAUSTICS_OT_remove_all_objects(bpy.types.Operator):
             coll_name = str(id(ob.mesh))  
             bpy.data.collections.remove(bpy.data.collections[coll_name])
         object_list.clear()
+        return {"FINISHED"}
+
+
+class REAL_CAUSTICS_OT_reset_object_settings(bpy.types.Operator):
+    bl_idname = "real_caustics.reset_object_settings"
+    bl_label = "Reset"
+    bl_options = {"INTERNAL"}
+    
+    
+    def invoke(self, context, event):
         return {"FINISHED"}
 
 
@@ -241,6 +254,7 @@ classes = [
     REAL_CAUSTICS_OT_refresh_list,
     REAL_CAUSTICS_OT_remove_all_objects,
     ObjectSettings,
+    REAL_CAUSTICS_OT_reset_object_settings,
 ]
 
 def register():
