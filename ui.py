@@ -20,11 +20,10 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         # Label - settings
         col.label(text = "Settings:")
 
-        # Box - settings
+        # Box - settings       
+        box = layout.box()
         # Settings of generation
         # Column 1
-        box = layout.box()
-        col = box.column()
         split = box.split()
         col = split.column(align = True)
         col.alignment = 'RIGHT'
@@ -71,16 +70,47 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         col.operator("real_caustics.auto_select_objects")
         col.separator(factor = 0.5)
         # UIList - Caustic Objects
-        row = box.row()
+        col = box.column(align = True)
+        row = col.row()
         row.template_list("OBJECT_UL_caustic_meshes", "caustic_meshes", scene, "caustic_meshes", 
             scene, "caustic_mesh_idx", rows = 2)
         # Buttons: add and remove mesh from list
         col = row.column(align = True)
         col.operator("real_caustics.add_mesh", text = "", icon = "ADD")
         col.operator("real_caustics.remove_mesh", text = "", icon = "REMOVE")
+        col.separator(factor = 1.5)
+        col.operator("real_caustics.refresh_list", text = "", icon = "FILE_REFRESH")
         # Select mesh
+        col = box.column(align = True)
+        row = col.row()
+        row.prop(scene, "mesh_to_add", text = "")
+        row.operator("real_caustics.append_selected_meshes", text = "Add Selected", icon = "PLUS")
+        # Remove All Objects
+        col.separator(factor = 0.8)
+        col.operator("real_caustics.remove_all_objects", text = "Remove All Objects", icon = "CANCEL")
+        col.separator(factor = 1.0)
+        # Object Settings Selector
         col = box.column()
-        col.prop(scene, "mesh_to_add", text = "")
+        col.prop_search(context.scene, "selected_object_name", scene, "caustic_meshes", text = "", icon = "MESH_DATA")
+        col.separator(factor = 0.5)      
+        if scene.selected_object:
+            # Object Settings
+            split = col.split()
+            # Labels - 1 collumn
+            col = split.column()
+            col.label(text = "Color")
+            col.label(text = "Roughness")
+            col.label(text = "Ior")
+            # Props - 2 collumn
+            col = split.column()
+            col.prop(scene.selected_object.object_settings, "color")
+            col.prop(scene.selected_object.object_settings, "roughness")
+            col.prop(scene.selected_object.object_settings, "ior")
+
+        # Box - Catcher Selector
+        box = layout.box()
+        
+
 
         
 
