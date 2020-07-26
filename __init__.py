@@ -3,6 +3,7 @@ from . import ui
 from . import generation
 from . import select_objects
 from . import catcher_selector
+from . import light_selector
 
 # pylint: disable=E1111
 bl_info = {
@@ -18,11 +19,13 @@ bl_info = {
 }
 
 
-def register():   
+def register():
+    light_selector.register()   
     ui.register()
     generation.register()
     select_objects.register()
     catcher_selector.register()
+    
     
     
 
@@ -32,5 +35,6 @@ def unregister():
     generation.unregister()
     select_objects.unregister()
     catcher_selector.unregister()
+    light_selector.unregister()
     
     

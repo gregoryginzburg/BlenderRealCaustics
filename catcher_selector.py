@@ -10,7 +10,6 @@ def add_catcher(scene, mesh):
     new_mesh.catcher = mesh
     new_mesh.name = mesh.name
     scene.catcher_mesh_idx = len(scene.catcher_meshes) - 1
-    scene.catcher_to_add = None
 
 def remove_catcher(scene, mesh, index):
     coll_name = f"catcher{id(mesh)}"  
@@ -58,11 +57,7 @@ class REAL_CAUSTICS_OT_add_catcher(bpy.types.Operator):
     def invoke(self, context, event):
         scene = context.scene
 
-        if not scene.catcher_to_add:
-            self.report(type = {'WARNING'}, message = "No Active object selected")
-            return {"FINISHED"}
-
-        add_catcher(scene, scene.catcher_to_add)
+        
         return {"FINISHED"}
 
 

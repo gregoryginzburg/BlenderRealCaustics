@@ -143,7 +143,7 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
                 icon = "TRIA_RIGHT",
                 icon_only = True, emboss = False)
 
-        row.prop(context.scene, "auto_select_catchers_is_on", text = "Auto-Select Objects", toggle = 1)
+        row.prop(context.scene, "auto_select_catchers_is_on", text = "Auto-Select Catchers", toggle = 1)
         if context.scene.auto_selector_catchers_is_expanded:
             col.separator(factor = 0.5)
             # UIList - Caustic Objects
@@ -163,6 +163,72 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
             # Add and remove
             row.operator("real_caustics.append_selected_catchers", text = "Add Selected", icon = "PLUS")
             row.operator("real_caustics.remove_all_catchers", text = "Remove All Objects", icon = "CANCEL")
+
+
+        # Label Lights selector
+        LightSelector = scene.LightSelector       
+
+        col = layout.column()
+        col.label(text = "Lights Selector:")
+        # Box - Lights Selector
+        box = layout.box()
+        col = box.column()
+        col.scale_y = 1.2
+        row = col.row()
+
+        if LightSelector.lights_panel_is_expanded:
+            row.prop(LightSelector, "lights_panel_is_expanded", 
+                icon = "TRIA_DOWN",
+                icon_only = True, emboss = False)
+        else:
+            row.prop(LightSelector, "lights_panel_is_expanded", 
+                icon = "TRIA_RIGHT",
+                icon_only = True, emboss = False)
+
+        row.prop(LightSelector, "auto_select_lights", text = "Auto-Select Lights", toggle = 1)
+        
+        if LightSelector.lights_panel_is_expanded:
+            col.separator(factor = 0.5)
+            # UIList - Caustic Objects
+            col = box.column(align = True)
+            row = col.row()
+            row.template_list("OBJECT_UL_lights", "", LightSelector, "lights", 
+                LightSelector, "light_index", rows = 2)
+            # Buttons: add and remove mesh from list
+            col = row.column(align = True)
+            col.operator("real_caustics.add_light", text = "", icon = "ADD")
+            col.operator("real_caustics.remove_light", text = "", icon = "REMOVE")
+            col.separator(factor = 1.5)
+            col.operator("real_caustics.refresh_list_of_lights", text = "", icon = "FILE_REFRESH")
+            # Select mesh
+            col = box.column(align = True)
+            row = col.row()
+            # Add and remove
+            row.operator("real_caustics.append_selected_lights", text = "Add Selected", icon = "PLUS")
+            row.operator("real_caustics.remove_all_lights", text = "Remove All Lights", icon = "CANCEL")
+            # Light Settings
+            col = box.column()
+            col.label(text = "Light Settings:")
+            col.separator(factor = 0.3)
+            row = col.row()
+
+            row.prop_search(LightSelector, "selected_light_name", LightSelector, "lights", text = "", icon = "OUTLINER_DATA_LIGHT")
+            
+            col.separator(factor = 0.5)      
+            if LightSelector.selected_light:
+                lights_settings = LightSelector.selected_light.lights_settings
+                # Object Settings
+                split = col.split()
+                # Labels - 1 collumn
+                col = split.column()
+                col.label(text = "Color")
+                col.label(text = "Power")
+                col.label(text = "Light Type")
+                # Props - 2 collumn
+                col = split.column()
+                col.prop(lights_settings, "color")
+                col.prop(lights_settings, "power")
+                col.prop(lights_settings, "light_type")
         
   
         

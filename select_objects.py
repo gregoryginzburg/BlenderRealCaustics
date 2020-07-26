@@ -11,7 +11,6 @@ def add_mesh(scene, mesh):
     new_mesh.mesh = mesh
     new_mesh.name = mesh.name
     scene.caustic_mesh_idx = len(scene.caustic_meshes) - 1
-    scene.mesh_to_add = None
 
 def remove_mesh(scene, mesh, index):
     coll_name = str(id(mesh))  
@@ -26,11 +25,12 @@ def alert(context):
 
     def draw(self, context):
         self.layout.label(text = "Refresh the list")
-
     context.window_manager.popup_menu(draw, title = "No object with this name", icon = 'ERROR')
 
 def set_object_settings():
     pass
+
+
 def update_selected_settings_object(self, context):
     try:
         ob = bpy.data.objects[self.selected_object_name]
@@ -95,11 +95,6 @@ class REAL_CAUSTICS_OT_add_mesh(bpy.types.Operator):
     def invoke(self, context, event):
         scene = context.scene
 
-        if not scene.mesh_to_add:
-            self.report(type = {'WARNING'}, message = "No Active object selected")
-            return {"FINISHED"}
-
-        add_mesh(scene, scene.mesh_to_add)
         return {"FINISHED"}
 
 
@@ -258,8 +253,10 @@ classes = [
 ]
 def update_auto_select_meshes_is_on(self, context):
     self.auto_selector_meshes_is_expanded = not self.auto_select_meshes_is_on
+    if self.auto_select_meshes_is_on:
+        bpy.ops.real_caustics.auto_select_objects() 
     return None
-      
+
 def register():
     
     for blender_class in classes:
