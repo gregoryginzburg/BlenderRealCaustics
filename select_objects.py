@@ -1,25 +1,33 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty, CollectionProperty, FloatVectorProperty, StringProperty
 # pylint: disable=E1111
-def add_mesh(scene, mesh):
-    """ Adds Mesh to Caustic Objects"""
-    if bpy.data.collections.find(str(id(mesh))) != -1: 
+
+
+def set_object_settings():
+    pass
+
+
+def add_caustic_object(scene, caustic_object):
+
+    if bpy.data.collections.find(f"caustic_object{id(caustic_object)}") != -1: 
         return None
+    bpy.data.collections.new(f"caustic_object{id(caustic_object)}")
+    new_caustic_object = scene.ObjectSelector.caustic_objects.add()
+    new_caustic_object.caustic_object = caustic_object
+    new_caustic_object.name = caustic_object.name
+    scene.ObjectSelector.caustic_objects_index = len(scene.ObjectSelector.caustic_objects) - 1
+    set_object_settings()
 
-    bpy.data.collections.new(str(id(mesh)))
-    new_mesh = scene.caustic_meshes.add()
-    new_mesh.mesh = mesh
-    new_mesh.name = mesh.name
-    scene.caustic_mesh_idx = len(scene.caustic_meshes) - 1
 
-def remove_mesh(scene, mesh, index):
-    coll_name = str(id(mesh))  
+def remove_caustic_object(scene, caustic_object, index):
+    ObjectSelector = scene.ObjectSelector   
+    coll_name = f"caustic_object{id(caustic_object)}"  
     bpy.data.collections.remove(bpy.data.collections[coll_name])
-    scene.caustic_meshes.remove(index)
-    if scene.caustic_mesh_idx == 0:
-            scene.caustic_mesh_idx = 0
+    ObjectSelector.caustic_objects.remove(index)
+    if ObjectSelector.caustic_objects_index == 0:
+        ObjectSelector.caustic_objects_index = 0
     else:
-        scene.caustic_mesh_idx -= 1
+        ObjectSelector.caustic_objects_index -= 1
 
 def alert(context):
 
@@ -27,24 +35,28 @@ def alert(context):
         self.layout.label(text = "Refresh the list")
     context.window_manager.popup_menu(draw, title = "No object with this name", icon = 'ERROR')
 
-def set_object_settings():
-    pass
 
-
-def update_selected_settings_object(self, context):
-    try:
-        ob = bpy.data.objects[self.selected_object_name]
-    except KeyError:
-        alert(context)
-        self.selected_object = None
-        return None         
-    self.selected_object = ob
-    set_object_settings()
+def update_auto_select_caustic_objects(self, context):
+    self.caustic_objects_panel_is_expanded = not self.auto_select_caustic_objects
+    if self.auto_select_caustic_objects:
+        bpy.ops.real_caustics.auto_select_caustic_objects() 
     return None
 
 
-class REAL_CAUSTICS_OT_auto_select_objects(bpy.types.Operator):
-    bl_idname = "real_caustics.auto_select_objects"
+def update_selected_caustic_object(self, context):
+    try:
+        ob = bpy.data.objects[self.selected_caustic_object_name]
+    except KeyError:
+        alert(context)
+        self.selected_caustic_object = None
+        return None         
+    self.selected_caustic_object = ob
+    return None
+
+
+
+class REAL_CAUSTICS_OT_auto_select_caustic_objects(bpy.types.Operator):
+    bl_idname = "real_caustics.auto_select_caustic_objects"
     bl_label = "Auto Select Objects"
     bl_options = {"INTERNAL"}
 
@@ -52,11 +64,11 @@ class REAL_CAUSTICS_OT_auto_select_objects(bpy.types.Operator):
         all_objects = bpy.data.objects
         scene = context.scene
         bpy.ops.real_caustics.refresh_list('INVOKE_DEFAULT')
-        for bl_object in all_objects:
-            if not bl_object.active_material:
+        for ob in all_objects:
+            if not ob.active_material:
                 continue 
 
-            nodes = bl_object.active_material.node_tree.nodes
+            nodes = ob.active_material.node_tree.nodes
             for node in nodes:
                 if (node.bl_idname != "ShaderNodeBsdfGlass" and node.bl_idname != "ShaderNodeBsdfPrincipled"
                     and node.bl_idname != "ShaderNodeBsdfRefraction"):
@@ -65,63 +77,57 @@ class REAL_CAUSTICS_OT_auto_select_objects(bpy.types.Operator):
                     inputs = node.inputs
                     if ((inputs[4].default_value > 0.95 or inputs[15].default_value > 0.95)
                          and inputs[7].default_value < 0.1):
-                        add_mesh(scene, bl_object)
+                        add_caustic_object(scene, ob)
                     else:
                         continue
                 elif node.bl_idname == "ShaderNodeBsdfGlass":
                     inputs = node.inputs
                     if inputs[1].default_value < 0.1:
-                        add_mesh(scene, bl_object)
+                        add_caustic_object(scene, ob)
                     else:
                         continue
                 elif node.bl_idname == "ShaderNodeBsdfRefraction":
                     inputs = node.inputs
                     if inputs[1].default_value < 0.1:
-                        add_mesh(scene, bl_object)
+                        add_caustic_object(scene, ob)
                     else:
                         continue
-
-
-                     
-
-        
         return {"FINISHED"}
 
-class REAL_CAUSTICS_OT_add_mesh(bpy.types.Operator):
-    bl_idname = "real_caustics.add_mesh"
+class REAL_CAUSTICS_OT_add_caustic_object(bpy.types.Operator):
+    bl_idname = "real_caustics.add_caustic_object"
     bl_label = "Add Mesh"
     bl_options = {"INTERNAL"}
 
     def invoke(self, context, event):
         scene = context.scene
-
         return {"FINISHED"}
 
 
-class REAL_CAUSTICS_OT_remove_mesh(bpy.types.Operator):
-    bl_idname = "real_caustics.remove_mesh"
+class REAL_CAUSTICS_OT_remove_caustic_object(bpy.types.Operator):
+    bl_idname = "real_caustics.remove_caustic_object"
     bl_label = "Remove Mesh"
     bl_options = {"INTERNAL"}
 
     def invoke(self, context, event):
         scene = context.scene
-        
-        if not scene.caustic_meshes:
+        ObjectSelector = scene.ObjectSelector     
+        if not ObjectSelector.caustic_objects:
             return {"FINISHED"}
-        if scene.caustic_mesh_idx == -1:
+        if ObjectSelector.caustic_objects_index == -1:
             self.report(type = {'WARNING'}, message = "No object selected") 
             return {"FINISHED"}
-        coll_name = str(id(scene.caustic_meshes[scene.caustic_mesh_idx].mesh))  
+        coll_name = f"caustic_object{id(ObjectSelector.caustic_objects[ObjectSelector.caustic_objects_index].caustic_object)}" 
         bpy.data.collections.remove(bpy.data.collections[coll_name])
-        scene.caustic_meshes.remove(scene.caustic_mesh_idx)
-        if scene.caustic_mesh_idx == 0:
-            scene.caustic_mesh_idx = 0
+        ObjectSelector.caustic_objects.remove(ObjectSelector.caustic_objects_index)
+        if ObjectSelector.caustic_objects_index == 0:
+            ObjectSelector.caustic_objects_index = 0
         else:
-            scene.caustic_mesh_idx -= 1
+            ObjectSelector.caustic_objects_index -= 1
         return {"FINISHED"}
 
-class REAL_CAUSTICS_OT_append_selected_meshes(bpy.types.Operator):
-    bl_idname = "real_caustics.append_selected_meshes"
+class REAL_CAUSTICS_OT_append_selected_caustic_objects(bpy.types.Operator):
+    bl_idname = "real_caustics.append_selected_caustic_objects"
     bl_label = "Append selected meshes"
     bl_options = {"INTERNAL"}
 
@@ -131,37 +137,38 @@ class REAL_CAUSTICS_OT_append_selected_meshes(bpy.types.Operator):
         for ob in selected_objects:
             if ob.type != "MESH":
                 continue
-            add_mesh(scene, ob)
+            add_caustic_object(scene, ob)
         return {"FINISHED"}
 
-class REAL_CAUSTICS_OT_refresh_list(bpy.types.Operator):
-    bl_idname = "real_caustics.refresh_list"
+class REAL_CAUSTICS_OT_refresh_list_of_caustic_objects(bpy.types.Operator):
+    bl_idname = "real_caustics.refresh_list_of_caustic_objects"
     bl_label = "Refresh List"
     bl_options = {"INTERNAL"}
 
     def invoke(self, context, event):
         scene = context.scene
-        object_list = scene.caustic_meshes
+        object_list = scene.ObjectSelector.caustic_objects
         new_object_list = []
         for ob in object_list:
-            if ob.mesh.users == 1 or (ob.mesh.users == 2 and ob.mesh.use_fake_user):
-                coll_name = str(id(ob.mesh))  
+            if (ob.caustic_object.users == 1 or 
+                (ob.caustic_object.users == 2 and ob.caustic_object.use_fake_user)):
+                coll_name = f"caustic_object{id(ob.caustic_object)}"  
                 bpy.data.collections.remove(bpy.data.collections[coll_name])
-                bpy.data.objects.remove(ob.mesh)          
+                bpy.data.objects.remove(ob.caustic_object)          
             else:
-                new_object_list.append(ob.mesh) 
+                new_object_list.append(ob.caustic_object) 
         object_list.clear()
 
-        for mesh in new_object_list:
-            new_mesh = object_list.add()
-            new_mesh.mesh = mesh
-            new_mesh.name = mesh.name
+        for ob in new_object_list:
+            new_ob = object_list.add()
+            new_ob.caustic_object = ob
+            new_ob.name = ob.name
 
-        scene.caustic_mesh_idx = -1 
+        scene.ObjectSelector.caustic_objects_index = -1 
         return {"FINISHED"}
 
-class REAL_CAUSTICS_OT_remove_all_objects(bpy.types.Operator):
-    bl_idname = "real_caustics.remove_all_objects"
+class REAL_CAUSTICS_OT_remove_all_caustic_objects(bpy.types.Operator):
+    bl_idname = "real_caustics.remove_all_caustic_objects"
     bl_label = "Remove all objects"
     bl_options = {"INTERNAL"}
     
@@ -170,33 +177,23 @@ class REAL_CAUSTICS_OT_remove_all_objects(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
     def execute(self, context):
-        if not context.scene.caustic_meshes:
+        ObjectSelector = context.scene.ObjectSelector       
+        if not ObjectSelector.caustic_objects:
             return {"FINISHED"}    
-        scene = context.scene
-        object_list = scene.caustic_meshes
+        object_list = ObjectSelector.caustic_objects
         for ob in object_list:
-            coll_name = str(id(ob.mesh))  
+            coll_name = f"caustic_object{id(ob.caustic_object)}" 
             bpy.data.collections.remove(bpy.data.collections[coll_name])
         object_list.clear()
         return {"FINISHED"}
 
 
-class REAL_CAUSTICS_OT_reset_object_settings(bpy.types.Operator):
-    bl_idname = "real_caustics.reset_object_settings"
-    bl_label = "Reset"
-    bl_options = {"INTERNAL"}
-    
-    
-    def invoke(self, context, event):
-        return {"FINISHED"}
-
-
-class OBJECT_UL_caustic_meshes(bpy.types.UIList):
+class OBJECT_UL_caustic_objects(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            if item.mesh:
-                layout.label(text = item.mesh.name, icon = "MESH_DATA")
+            if item.caustic_object:
+                layout.label(text = item.caustic_object.name, icon = "MESH_DATA")
             else:
                 layout.label(text = "", icon = "MESH_DATA")
         elif self.layout_type in {'GRID'}:
@@ -205,13 +202,31 @@ class OBJECT_UL_caustic_meshes(bpy.types.UIList):
 
 
 
-class MeshCollection(bpy.types.PropertyGroup):
-    mesh: PointerProperty(
-        name = "Mesh",
+class CausticObject(bpy.types.PropertyGroup):
+    caustic_object: PointerProperty(
+        name = "Object",
         type = bpy.types.Object,
     )
-    name = bpy.props.StringProperty(default = "dwadaw")
-
+    name = bpy.props.StringProperty(default = "")
+class ObjectSelector(bpy.types.PropertyGroup):
+    caustic_objects: CollectionProperty(
+        type = CausticObject,
+    )
+    caustic_objects_index: IntProperty(
+        default = 0,
+    ) 
+    auto_select_caustic_objects: BoolProperty(default = True,
+        update = update_auto_select_caustic_objects,      
+    )
+    caustic_objects_panel_is_expanded: BoolProperty(
+        default = False,
+    )
+    selected_caustic_object: PointerProperty(
+        type = bpy.types.Object 
+    )
+    selected_caustic_object_name: StringProperty(default = "",  
+        update = update_selected_caustic_object
+    ) 
 
 class ObjectSettings(bpy.types.PropertyGroup):
     color: FloatVectorProperty(
@@ -221,7 +236,6 @@ class ObjectSettings(bpy.types.PropertyGroup):
         min = 0.0,
         max = 1.0,
         subtype = 'COLOR',
-
     )
     roughness: FloatProperty(
         name = "",
@@ -235,49 +249,41 @@ class ObjectSettings(bpy.types.PropertyGroup):
         name = "",
         description = "",
         min = 0.0,
-        default = 1.33
+        default = 1.33,
     )
 
 
 classes = [
-    REAL_CAUSTICS_OT_auto_select_objects,
-    OBJECT_UL_caustic_meshes,
-    MeshCollection,
-    REAL_CAUSTICS_OT_add_mesh,
-    REAL_CAUSTICS_OT_remove_mesh,
-    REAL_CAUSTICS_OT_append_selected_meshes,
-    REAL_CAUSTICS_OT_refresh_list,
-    REAL_CAUSTICS_OT_remove_all_objects,
+    REAL_CAUSTICS_OT_auto_select_caustic_objects,
+    OBJECT_UL_caustic_objects,
+    REAL_CAUSTICS_OT_add_caustic_object,
+    REAL_CAUSTICS_OT_remove_caustic_object,
+    REAL_CAUSTICS_OT_append_selected_caustic_objects,
+    REAL_CAUSTICS_OT_refresh_list_of_caustic_objects,
+    REAL_CAUSTICS_OT_remove_all_caustic_objects,
+    CausticObject,
+    ObjectSelector,
     ObjectSettings,
-    REAL_CAUSTICS_OT_reset_object_settings,
 ]
-def update_auto_select_meshes_is_on(self, context):
-    self.auto_selector_meshes_is_expanded = not self.auto_select_meshes_is_on
-    if self.auto_select_meshes_is_on:
-        bpy.ops.real_caustics.auto_select_objects() 
-    return None
+
 
 def register():
     
     for blender_class in classes:
         bpy.utils.register_class(blender_class)
-    bpy.types.Scene.caustic_meshes = CollectionProperty(type = MeshCollection, options = {"HIDDEN"})
-    bpy.types.Scene.caustic_mesh_idx = IntProperty(default = 0, options = {"HIDDEN"})
-    bpy.types.Object.object_settings = PointerProperty(type = ObjectSettings, options = {"HIDDEN"})
-    bpy.types.Scene.selected_object_name = StringProperty(default = "", options = {'HIDDEN'}, update = update_selected_settings_object)
-    bpy.types.Scene.selected_object = PointerProperty(type = bpy.types.Object, options = {'HIDDEN'})
-    bpy.types.Scene.auto_select_meshes_is_on = BoolProperty(default = True, update = update_auto_select_meshes_is_on)
-    bpy.types.Scene.auto_selector_meshes_is_expanded = BoolProperty(default = False) 
-    
+    bpy.types.Scene.ObjectSelector = PointerProperty(
+        type = ObjectSelector,
+        options = {"HIDDEN"},
+    ) 
+    bpy.types.Object.ObjectSettings = PointerProperty(
+        type = ObjectSettings,
+        options = {"HIDDEN"},
+    )
+   
 
 def unregister():
     for blender_class in classes:
         bpy.utils.unregister_class(blender_class)
-    del bpy.types.Scene.caustic_meshes
-    del bpy.types.Scene.caustic_mesh_idx 
-    del bpy.types.Object.object_settings
-    del bpy.types.Scene.selected_object_name
-    del bpy.types.Scene.selected_object
-    del bpy.types.Scene.auto_select_meshes_is_on
-    del bpy.types.Scene.auto_selector_meshes_is_expanded  
+    del bpy.types.Scene.ObjectSelector
+    del bpy.types.Object.ObjectSettings   
   
