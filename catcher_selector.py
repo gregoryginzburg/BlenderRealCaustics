@@ -1,26 +1,48 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty, CollectionProperty, FloatVectorProperty, StringProperty
 # pylint: disable=E1111
-def add_catcher(scene, mesh):
-    """ Adds Mesh to Caustic Objects"""
-    if bpy.data.collections.find(f"catcher{id(mesh)}") != -1: 
+
+def set_catcher_settings():
+    pass
+
+def add_catcher(scene, catcher):
+    CatcherSelector = scene.CatcherSelector
+    if bpy.data.collections.find(f"catcher{id(catcher)}") != -1: 
         return None
-    bpy.data.collections.new(f"catcher{id(mesh)}")
-    new_mesh = scene.catcher_meshes.add()
-    new_mesh.catcher = mesh
-    new_mesh.name = mesh.name
-    scene.catcher_mesh_idx = len(scene.catcher_meshes) - 1
+    bpy.data.collections.new(f"catcher{id(catcher)}")
+    new_catcher = CatcherSelector.catchers.add()
+    new_catcher.catcher = catcher
+    new_catcher.name = catcher.name
+    CatcherSelector.catchers_index = len(CatcherSelector.catchers) - 1
+    set_catcher_settings()
+    return None
 
-def remove_catcher(scene, mesh, index):
-    coll_name = f"catcher{id(mesh)}"  
+def remove_catcher(scene, catcher, index):
+    CatcherSelector = scene.CatcherSelector 
+    coll_name = f"catcher{id(catcher)}"  
     bpy.data.collections.remove(bpy.data.collections[coll_name])
-    scene.catcher_meshes.remove(index)
-    if scene.catcher_mesh_idx == 0:
-        scene.catcher_mesh_idx = 0
+    CatcherSelector.catchers.remove(index)
+    if CatcherSelector.catchers_index == 0:
+        CatcherSelector.catchers_index = 0
     else:
-        scene.catcher_mesh_idx -= 1
+        CatcherSelector.catchers_index -= 1
+    return None
 
+def update_auto_select_catchers(self, context):
+    self.catchers_panel_is_expanded = not self.auto_select_catchers
+    if self.auto_select_catchers:
+        bpy.ops.real_caustics.real_caustics.auto_select_catchers('INVOKE_DEFAULT')
+    return None
 
+def update_selected_catcher(self, context):
+    try:
+        ob = bpy.data.objects[self.selected_catcher_name]
+    except KeyError:
+        alert(context)
+        self.selected_catcher = None
+        return None         
+    self.selected_catcher = ob
+    return None
 
 class REAL_CAUSTICS_OT_auto_select_catchers(bpy.types.Operator):
     bl_idname = "real_caustics.auto_select_catchers"
@@ -31,22 +53,21 @@ class REAL_CAUSTICS_OT_auto_select_catchers(bpy.types.Operator):
         all_objects = bpy.data.objects
         scene = context.scene
         bpy.ops.real_caustics.refresh_list_of_catchers('INVOKE_DEFAULT')
-        for bl_object in all_objects:
-            if not bl_object.active_material:
+        for ob in all_objects:
+            if not ob.active_material:
                 continue 
-
-            nodes = bl_object.active_material.node_tree.nodes
+            nodes = ob.active_material.node_tree.nodes
             for node in nodes:
                 if (node.bl_idname != "ShaderNodeBsdfDiffuse" and node.bl_idname != "ShaderNodeBsdfPrincipled"):
                     continue
                 elif node.bl_idname == "ShaderNodeBsdfPrincipled":
                     inputs = node.inputs
                     if ((inputs[4].default_value < 0.05 or inputs[15].default_value < 0.05)):
-                        add_catcher(scene, bl_object)
+                        add_catcher(scene, ob)
                     else:
                         continue
                 elif node.bl_idname == "ShaderNodeBsdfDiffuse":
-                    add_catcher(scene, bl_object)    
+                    add_catcher(scene, ob)    
         return {"FINISHED"}
 
 class REAL_CAUSTICS_OT_add_catcher(bpy.types.Operator):
@@ -55,9 +76,7 @@ class REAL_CAUSTICS_OT_add_catcher(bpy.types.Operator):
     bl_options = {"INTERNAL"}
 
     def invoke(self, context, event):
-        scene = context.scene
-
-        
+        scene = context.scene      
         return {"FINISHED"}
 
 
@@ -68,14 +87,16 @@ class REAL_CAUSTICS_OT_remove_catcher(bpy.types.Operator):
 
     def invoke(self, context, event):
         scene = context.scene
-        
-        if not scene.catcher_meshes:
+        CatcherSelector = scene.CatcherSelector    
+        if not CatcherSelector.catchers:
             return {"FINISHED"}
-        if scene.catcher_mesh_idx == -1:
+        if CatcherSelector.catchers_index == -1:
             self.report(type = {'WARNING'}, message = "No object selected") 
             return {"FINISHED"}
 
-        remove_catcher(scene, scene.catcher_meshes[scene.catcher_mesh_idx].catcher, scene.catcher_mesh_idx)
+        remove_catcher(scene, 
+            CatcherSelector.catchers[CatcherSelector.catchers_index].catcher, 
+            CatcherSelector.catchers_index)
         return {"FINISHED"}
 
 class REAL_CAUSTICS_OT_append_selected_catchers(bpy.types.Operator):
@@ -99,7 +120,8 @@ class REAL_CAUSTICS_OT_refresh_list_of_catchers(bpy.types.Operator):
 
     def invoke(self, context, event):
         scene = context.scene
-        object_list = scene.catcher_meshes
+        CatcherSelector = scene.CatcherSelector
+        object_list = CatcherSelector.catchers
         new_object_list = []
         for ob in object_list:
             if ob.catcher.users == 1 or (ob.catcher.users == 2 and ob.catcher.use_fake_user):
@@ -110,11 +132,11 @@ class REAL_CAUSTICS_OT_refresh_list_of_catchers(bpy.types.Operator):
                 new_object_list.append(ob.catcher) 
         object_list.clear()
 
-        for mesh in new_object_list:
-            new_mesh = object_list.add()
-            new_mesh.catcher = mesh
-            new_mesh.name = mesh.name
-        scene.catcher_mesh_idx = -1 
+        for catcher in new_object_list:
+            new_catcher = object_list.add()
+            new_catcher.catcher = catcher
+            new_catcher.name = catcher.name
+        CatcherSelector.catchers_index = -1 
         return {"FINISHED"}
 
 class REAL_CAUSTICS_OT_remove_all_catchers(bpy.types.Operator):
@@ -127,10 +149,10 @@ class REAL_CAUSTICS_OT_remove_all_catchers(bpy.types.Operator):
         return context.window_manager.invoke_confirm(self, event)
 
     def execute(self, context):
-        if not context.scene.catcher_meshes:
+        CatcherSelector = context.scene.CatcherSelector      
+        if not CatcherSelector.catchers:
             return {"FINISHED"}    
-        scene = context.scene
-        object_list = scene.catcher_meshes
+        object_list = CatcherSelector.catchers
         for ob in object_list:
             coll_name = f"catcher{id(ob.catcher)}" 
             bpy.data.collections.remove(bpy.data.collections[coll_name])
@@ -145,50 +167,63 @@ class OBJECT_UL_caustic_catchers(bpy.types.UIList):
             if item.catcher:
                 layout.label(text = item.catcher.name, icon = "VIEW_PERSPECTIVE")
             else:
-                layout.label(text = "", icon = "MESH_DATA")
+                layout.label(text = "", icon = "VIEW_PERSPECTIVE")
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
-            layout.label(text="", icon = "MESH_DATA")
+            layout.label(text="", icon = "VIEW_PERSPECTIVE")
 
 
 
-class CatcherCollection(bpy.types.PropertyGroup):
+class Catcher(bpy.types.PropertyGroup):
     catcher: PointerProperty(
         name = "Catcher",
         type = bpy.types.Object,
     )
     name = bpy.props.StringProperty(default = "")
 
+class CatcherSelector(bpy.types.PropertyGroup):
+    catchers: CollectionProperty(
+        type = Catcher,
+    )
+    catchers_index: IntProperty(
+        default = 0,
+    )
+    auto_select_catchers: BoolProperty(default = True,
+        update = update_auto_select_catchers,  
+    )
+    catchers_panel_is_expanded: BoolProperty(
+        default = False,
+    )
+    selected_catcher: PointerProperty(
+        type = bpy.types.Object,
+    )
+    selected_catcher_name: StringProperty(
+        update = update_selected_catcher, 
+    )
 
 
 
 classes = [
     REAL_CAUSTICS_OT_auto_select_catchers,
     OBJECT_UL_caustic_catchers,
-    CatcherCollection,
     REAL_CAUSTICS_OT_add_catcher,
     REAL_CAUSTICS_OT_remove_catcher,
     REAL_CAUSTICS_OT_append_selected_catchers,
     REAL_CAUSTICS_OT_refresh_list_of_catchers,
     REAL_CAUSTICS_OT_remove_all_catchers,
+    Catcher,
+    CatcherSelector,
 ]
-def update_auto_select_catchers_is_on(self, context):
-    self.auto_selector_catchers_is_expanded = not self.auto_select_catchers_is_on
-    return None
+
 def register():   
     for blender_class in classes:
         bpy.utils.register_class(blender_class)
-    bpy.types.Scene.catcher_meshes = CollectionProperty(type = CatcherCollection, options = {"HIDDEN"})
-    bpy.types.Scene.catcher_mesh_idx = IntProperty(default = 0, options = {"HIDDEN"})
-    bpy.types.Scene.auto_select_catchers_is_on = BoolProperty(default = True, update = update_auto_select_catchers_is_on)
-    bpy.types.Scene.auto_selector_catchers_is_expanded = BoolProperty(default = False) 
+    bpy.types.Scene.CatcherSelector = PointerProperty(type = CatcherSelector, 
+        options = {"HIDDEN"}) 
     
 
 def unregister():
     for blender_class in classes:
         bpy.utils.unregister_class(blender_class)
-    del bpy.types.Scene.catcher_meshes
-    del bpy.types.Scene.catcher_mesh_idx
-    del bpy.types.Scene.auto_select_catchers_is_on
-    del bpy.types.Scene.auto_selector_catchers_is_expanded  
+    del bpy.types.Scene.CatcherSelector
   
