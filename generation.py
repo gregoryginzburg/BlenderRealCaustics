@@ -13,7 +13,6 @@ class REAL_CAUSTICS_OT_generate_caustics(bpy.types.Operator):
     bl_options = {"INTERNAL"}
 
     def execute(self, context):
-        context.active_object.data.test_mesh = True
         return {"FINISHED"}
 
 

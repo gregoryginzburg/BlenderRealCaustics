@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty, CollectionProperty, FloatVectorProperty, StringProperty
+# from utils import alert
 # pylint: disable=E1111
 
 
@@ -29,11 +30,6 @@ def remove_caustic_object(scene, caustic_object, index):
     else:
         ObjectSelector.caustic_objects_index -= 1
 
-def alert(context):
-
-    def draw(self, context):
-        self.layout.label(text = "Refresh the list")
-    context.window_manager.popup_menu(draw, title = "No object with this name", icon = 'ERROR')
 
 
 def update_auto_select_caustic_objects(self, context):
@@ -44,10 +40,15 @@ def update_auto_select_caustic_objects(self, context):
 
 
 def update_selected_caustic_object(self, context):
+    if self.selected_caustic_object_name == "":
+        return None
     try:
         ob = bpy.data.objects[self.selected_caustic_object_name]
     except KeyError:
-        alert(context)
+        # alert(context,
+        #     message = "No object with this name in the list",
+        #     top_title = "Refresh the list",
+        # )
         self.selected_caustic_object = None
         return None         
     self.selected_caustic_object = ob
@@ -63,7 +64,7 @@ class REAL_CAUSTICS_OT_auto_select_caustic_objects(bpy.types.Operator):
     def execute(self, context):
         all_objects = bpy.data.objects
         scene = context.scene
-        bpy.ops.real_caustics.refresh_list('INVOKE_DEFAULT')
+        bpy.ops.real_caustics.refresh_list_of_caustic_objects()
         for ob in all_objects:
             if not ob.active_material:
                 continue 
@@ -145,7 +146,7 @@ class REAL_CAUSTICS_OT_refresh_list_of_caustic_objects(bpy.types.Operator):
     bl_label = "Refresh List"
     bl_options = {"INTERNAL"}
 
-    def invoke(self, context, event):
+    def execute(self, context):
         scene = context.scene
         object_list = scene.ObjectSelector.caustic_objects
         new_object_list = []

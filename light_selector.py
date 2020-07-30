@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty, CollectionProperty, FloatVectorProperty, StringProperty, EnumProperty
+# from utils import alert
 # pylint: disable=E1111
 def set_object_settings(scene):
     pass
@@ -31,6 +32,8 @@ def remove_light(scene, light, index):
 
 def update_auto_select_lights(self, context):
     self.lights_panel_is_expanded = not self.auto_select_lights
+    if self.auto_select_lights:
+        bpy.ops.real_caustics.auto_select_lights()
     return None
 
 
@@ -43,14 +46,18 @@ def alert(context):
 
 
 def update_selected_light(self, context):
-    LightSelector = context.scene.LightSelector
+    if self.selected_light_name == "":
+        return None
     try:
-        light = bpy.data.objects[LightSelector.selected_light_name]
+        light = bpy.data.objects[self.selected_light_name]
     except KeyError:
-        alert(context)
+        # alert(context,
+        #     message = "No object with this name in the list",
+        #     top_title = "Refresh the list",
+        # )
         self.selected_object = None
         return None         
-    LightSelector.selected_light = light
+    self.selected_light = light
     return None
 
 
@@ -62,8 +69,10 @@ class REAL_CAUSTICS_OT_auto_select_lights(bpy.types.Operator):
     def execute(self, context):
         all_objects = bpy.data.objects
         scene = context.scene
-        bpy.ops.real_caustics.real_caustics.refresh_list_of_lights('INVOKE_DEFAULT')
+        bpy.ops.real_caustics.refresh_list_of_lights()
         for ob in all_objects:
+            if ob.type != "LIGHT":
+                continue
             add_light(scene, ob)              
         return {"FINISHED"}
 
@@ -137,7 +146,7 @@ class REAL_CAUSTICS_OT_refresh_list_of_lights(bpy.types.Operator):
     bl_label = "Refresh List of Lights"
     bl_options = {"INTERNAL"}
 
-    def invoke(self, context, event):
+    def execute(self, context):
         scene = context.scene
         object_list = scene.LightSelector.lights
         new_object_list = []
@@ -184,18 +193,22 @@ class Light(bpy.types.PropertyGroup):
 class LightSelector(bpy.types.PropertyGroup):
     lights: CollectionProperty(
         type = Light, 
-        options = {"HIDDEN"}) 
-    light_index: IntProperty(default = 0, 
-        options = {"HIDDEN"})
+    ) 
+    light_index: IntProperty(
+        default = 0, 
+    )
     auto_select_lights: BoolProperty(default = True, 
-        update = update_auto_select_lights) 
-    lights_panel_is_expanded: BoolProperty(default = False)
-    
-    selected_light: PointerProperty(type = bpy.types.Object, 
-        options = {'HIDDEN'}) 
-    selected_light_name: StringProperty(default = "", 
-        options = {'HIDDEN'}, 
-        update = update_selected_light) 
+        update = update_auto_select_lights
+    ) 
+    lights_panel_is_expanded: BoolProperty(
+        default = False,
+    )  
+    selected_light: PointerProperty(
+        type = bpy.types.Object, 
+    ) 
+    selected_light_name: StringProperty(default = "",  
+        update = update_selected_light
+    ) 
 
 
 class LightSettings(bpy.types.PropertyGroup):
@@ -212,9 +225,9 @@ class LightSettings(bpy.types.PropertyGroup):
         name = "",
         description = "",
         min = 0.0,
-        max = 0.1,
-        subtype = 'FACTOR',
-        precision = 3,
+        unit = "POWER",
+        precision = 1,
+        step = 10,
     )
     light_type: EnumProperty(
         name = "",
@@ -254,6 +267,7 @@ def unregister():
     for blender_class in classes:
         bpy.utils.unregister_class(blender_class)
     del bpy.types.Scene.LightSelector
-    del bpy.types.Object.lights_settings 
+    del bpy.types.Object.lights_settings
+
 
   

@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty, CollectionProperty, FloatVectorProperty, StringProperty
+# import utils
 # pylint: disable=E1111
 
 def set_catcher_settings():
@@ -31,14 +32,19 @@ def remove_catcher(scene, catcher, index):
 def update_auto_select_catchers(self, context):
     self.catchers_panel_is_expanded = not self.auto_select_catchers
     if self.auto_select_catchers:
-        bpy.ops.real_caustics.real_caustics.auto_select_catchers('INVOKE_DEFAULT')
+        bpy.ops.real_caustics.auto_select_catchers()
     return None
 
 def update_selected_catcher(self, context):
+    if self.selected_catcher_name == "":
+        return None
     try:
         ob = bpy.data.objects[self.selected_catcher_name]
     except KeyError:
-        alert(context)
+        # alert(context,
+        #     message = "No object with this name in the list",
+        #     top_title = "Refresh the list",
+        # )
         self.selected_catcher = None
         return None         
     self.selected_catcher = ob
@@ -52,7 +58,7 @@ class REAL_CAUSTICS_OT_auto_select_catchers(bpy.types.Operator):
     def execute(self, context):
         all_objects = bpy.data.objects
         scene = context.scene
-        bpy.ops.real_caustics.refresh_list_of_catchers('INVOKE_DEFAULT')
+        bpy.ops.real_caustics.refresh_list_of_catchers()
         for ob in all_objects:
             if not ob.active_material:
                 continue 
@@ -118,7 +124,7 @@ class REAL_CAUSTICS_OT_refresh_list_of_catchers(bpy.types.Operator):
     bl_label = "Refresh List of Catchers"
     bl_options = {"INTERNAL"}
 
-    def invoke(self, context, event):
+    def execute(self, context):
         scene = context.scene
         CatcherSelector = scene.CatcherSelector
         object_list = CatcherSelector.catchers

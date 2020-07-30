@@ -59,6 +59,11 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         col.prop(scene.caustics_settings, "photons_count")
         col.prop(scene.caustics_settings, "search_radius")
 
+        # -------------------------------------------------
+        # CAUSTIC OBJECT SELECTOR
+        # -------------------------------------------------
+
+        ObjectSelector = scene.ObjectSelector
         # Label Object selector
         col = layout.column()
         col.label(text = "Object Selector:")
@@ -70,37 +75,39 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         col = box.column()
         col.scale_y = 1.2
         row = col.row()
-        if context.scene.auto_selector_meshes_is_expanded:
-            row.prop(context.scene, "auto_selector_meshes_is_expanded", 
+        if ObjectSelector.caustic_objects_panel_is_expanded:
+            row.prop(ObjectSelector, "caustic_objects_panel_is_expanded", 
                 icon = "TRIA_DOWN",
                 icon_only = True, emboss = False)
         else:
-            row.prop(context.scene, "auto_selector_meshes_is_expanded", 
+            row.prop(ObjectSelector, "caustic_objects_panel_is_expanded", 
                 icon = "TRIA_RIGHT",
                 icon_only = True, emboss = False)
 
-        row.prop(context.scene, "auto_select_meshes_is_on", text = "Auto-Select Objects", toggle = 1)
+        row.prop(ObjectSelector, "auto_select_caustic_objects", text = "Auto-Select Objects", toggle = 1)
         
         # UIList - Caustic Objects
-        if context.scene.auto_selector_meshes_is_expanded:
+        if ObjectSelector.caustic_objects_panel_is_expanded:
             col.separator(factor = 0.5) 
             col = box.column(align = True)
             row = col.row()
-            row.template_list("OBJECT_UL_caustic_meshes", "caustic_meshes", scene, "caustic_meshes", 
-                scene, "caustic_mesh_idx", rows = 2)
+            row.template_list("OBJECT_UL_caustic_objects", "", 
+                ObjectSelector, "caustic_objects", 
+                ObjectSelector, "caustic_objects_index", 
+                rows = 2)
             # Buttons: add and remove mesh from list
             col = row.column(align = True)
-            col.operator("real_caustics.add_mesh", text = "", icon = "ADD")
-            col.operator("real_caustics.remove_mesh", text = "", icon = "REMOVE")
+            col.operator("real_caustics.add_caustic_object", text = "", icon = "ADD")
+            col.operator("real_caustics.remove_caustic_object", text = "", icon = "REMOVE")
             col.separator(factor = 1.5)
-            col.operator("real_caustics.refresh_list", text = "", icon = "FILE_REFRESH")
+            col.operator("real_caustics.refresh_list_of_caustic_objects", text = "", icon = "FILE_REFRESH")
             # Select mesh
             col = box.column(align = True)
             row = col.row()
             # Add objects
-            row.operator("real_caustics.append_selected_meshes", text = "Add Selected", icon = "PLUS")
+            row.operator("real_caustics.append_selected_caustic_objects", text = "Add Selected", icon = "PLUS")
             # Remove All Objects
-            row.operator("real_caustics.remove_all_objects", text = "Remove All Objects", icon = "CANCEL")
+            row.operator("real_caustics.remove_all_caustic_objects", text = "Remove All Objects", icon = "CANCEL")
             
             
             # Object Settings Selector
@@ -108,10 +115,11 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
             col.label(text = "Object Settings:")
             col.separator(factor = 0.3)
             row = col.row()
-            row.prop_search(context.scene, "selected_object_name", scene, "caustic_meshes", text = "", icon = "MESH_DATA")
+            row.prop_search(ObjectSelector, "selected_caustic_object_name", 
+                ObjectSelector, "caustic_objects", text = "", icon = "MESH_DATA")
             row.operator("real_caustics.reset_object_settings", text = "Reset Object Settings", icon = "LOOP_BACK")
             col.separator(factor = 0.5)      
-            if scene.selected_object:
+            if ObjectSelector.selected_caustic_object:
                 # Object Settings
                 split = col.split()
                 # Labels - 1 collumn
@@ -121,10 +129,17 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
                 col.label(text = "Ior")
                 # Props - 2 collumn
                 col = split.column()
-                col.prop(scene.selected_object.object_settings, "color")
-                col.prop(scene.selected_object.object_settings, "roughness")
-                col.prop(scene.selected_object.object_settings, "ior")
+                caustic_object = ObjectSelector.selected_caustic_object 
+                col.prop(caustic_object, "color", text = "")
+                col.prop(caustic_object, "roughness", text = "")
+                col.prop(caustic_object, "ior", text = "")
 
+        
+
+        # -------------------------------------------------
+        # CATCHER SELECTOR
+        # -------------------------------------------------
+        CatcherSelector = scene.CatcherSelector    
         # Label Object selector
         col = layout.column()
         col.label(text = "Catcher Selector:")
@@ -134,23 +149,25 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         col.scale_y = 1.2
         row = col.row()
 
-        if context.scene.auto_selector_catchers_is_expanded:
-            row.prop(context.scene, "auto_selector_catchers_is_expanded", 
+        if CatcherSelector.catchers_panel_is_expanded:
+            row.prop(CatcherSelector, "catchers_panel_is_expanded", 
                 icon = "TRIA_DOWN",
                 icon_only = True, emboss = False)
         else:
-            row.prop(context.scene, "auto_selector_catchers_is_expanded", 
+            row.prop(CatcherSelector, "catchers_panel_is_expanded", 
                 icon = "TRIA_RIGHT",
                 icon_only = True, emboss = False)
 
-        row.prop(context.scene, "auto_select_catchers_is_on", text = "Auto-Select Catchers", toggle = 1)
-        if context.scene.auto_selector_catchers_is_expanded:
+        row.prop(CatcherSelector, "auto_select_catchers", text = "Auto-Select Catchers", toggle = 1)
+        
+        if CatcherSelector.catchers_panel_is_expanded:
             col.separator(factor = 0.5)
             # UIList - Caustic Objects
             col = box.column(align = True)
             row = col.row()
-            row.template_list("OBJECT_UL_caustic_catchers", "", scene, "catcher_meshes", 
-                scene, "catcher_mesh_idx", rows = 2)
+            row.template_list("OBJECT_UL_caustic_catchers", "", 
+                CatcherSelector, "catchers", 
+                CatcherSelector, "catchers_index", rows = 2)
             # Buttons: add and remove mesh from list
             col = row.column(align = True)
             col.operator("real_caustics.add_catcher", text = "", icon = "ADD")
@@ -164,6 +181,10 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
             row.operator("real_caustics.append_selected_catchers", text = "Add Selected", icon = "PLUS")
             row.operator("real_caustics.remove_all_catchers", text = "Remove All Objects", icon = "CANCEL")
 
+
+        # -------------------------------------------------
+        # LIGHT SELECTOR
+        # -------------------------------------------------
 
         # Label Lights selector
         LightSelector = scene.LightSelector       
@@ -192,7 +213,8 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
             # UIList - Caustic Objects
             col = box.column(align = True)
             row = col.row()
-            row.template_list("OBJECT_UL_lights", "", LightSelector, "lights", 
+            row.template_list("OBJECT_UL_lights", "", 
+                LightSelector, "lights", 
                 LightSelector, "light_index", rows = 2)
             # Buttons: add and remove mesh from list
             col = row.column(align = True)
@@ -232,12 +254,6 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         
   
         
-        
-        
-
-
-        
-
         # UIList with objects
 
         
