@@ -10,8 +10,9 @@ from bpy.props import (
 )
 
 # import utils
-# pylint: disable=E1111
-
+# pylint: disable=assignment-from-no-return
+# pylint: disable=no-member
+# pylint: disable=unused-variable
 
 def set_catcher_settings():
     pass

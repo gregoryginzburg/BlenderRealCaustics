@@ -9,8 +9,11 @@ from bpy.props import (
     StringProperty,
 )
 
+
 # from utils import alert
-# pylint: disable=E1111
+# pylint: disable=assignment-from-no-return
+# pylint: disable=no-member
+# pylint: disable=unused-variable
 
 
 def check_selected_name_exists(scene):

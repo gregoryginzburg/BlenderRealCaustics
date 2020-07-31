@@ -11,7 +11,10 @@ from bpy.props import (
 )
 
 # from utils import alert
-# pylint: disable=E1111
+# pylint: disable=assignment-from-no-return
+# pylint: disable=no-member
+# pylint: disable=unused-variable
+
 def set_object_settings(scene):
     pass
 

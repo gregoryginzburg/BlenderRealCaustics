@@ -1,7 +1,9 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty
 
-# pylint: disable=E1111
+# pylint: disable=assignment-from-no-return
+# pylint: disable=no-member
+# pylint: disable=unused-variable
 
 
 def update_camera_resolution(self, context):
