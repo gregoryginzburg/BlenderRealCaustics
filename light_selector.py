@@ -1,5 +1,15 @@
 import bpy
-from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty, CollectionProperty, FloatVectorProperty, StringProperty, EnumProperty
+from bpy.props import (
+    IntProperty,
+    BoolProperty,
+    FloatProperty,
+    PointerProperty,
+    CollectionProperty,
+    FloatVectorProperty,
+    StringProperty,
+    EnumProperty,
+)
+
 # from utils import alert
 # pylint: disable=E1111
 def set_object_settings(scene):
@@ -8,7 +18,7 @@ def set_object_settings(scene):
 
 def add_light(scene, light):
 
-    if bpy.data.collections.find(f"light{id(light)}") != -1: 
+    if bpy.data.collections.find(f"light{id(light)}") != -1:
         return None
     bpy.data.collections.new(f"light{id(light)}")
     new_light = scene.LightSelector.lights.add()
@@ -18,8 +28,9 @@ def add_light(scene, light):
     set_object_settings(scene)
     return None
 
+
 def remove_light(scene, light, index):
-    coll_name = f"light{id(light)}"  
+    coll_name = f"light{id(light)}"
     bpy.data.collections.remove(bpy.data.collections[coll_name])
     scene.LightSelector.lights.remove(index)
 
@@ -39,9 +50,11 @@ def update_auto_select_lights(self, context):
 
 def alert(context):
     def draw(self, context):
-        self.layout.label(text = "Refresh the list")
-    context.window_manager.popup_menu(draw, title = "No light with this name", 
-        icon = 'ERROR')
+        self.layout.label(text="Refresh the list")
+
+    context.window_manager.popup_menu(
+        draw, title="No light with this name", icon="ERROR"
+    )
     return None
 
 
@@ -56,7 +69,7 @@ def update_selected_light(self, context):
         #     top_title = "Refresh the list",
         # )
         self.selected_object = None
-        return None         
+        return None
     self.selected_light = light
     return None
 
@@ -73,8 +86,9 @@ class REAL_CAUSTICS_OT_auto_select_lights(bpy.types.Operator):
         for ob in all_objects:
             if ob.type != "LIGHT":
                 continue
-            add_light(scene, ob)              
+            add_light(scene, ob)
         return {"FINISHED"}
+
 
 class REAL_CAUSTICS_OT_add_light(bpy.types.Operator):
     bl_idname = "real_caustics.add_light"
@@ -82,7 +96,7 @@ class REAL_CAUSTICS_OT_add_light(bpy.types.Operator):
     bl_options = {"INTERNAL"}
 
     def invoke(self, context, event):
-        scene = context.scene      
+        scene = context.scene
         return {"FINISHED"}
 
 
@@ -93,16 +107,20 @@ class REAL_CAUSTICS_OT_remove_light(bpy.types.Operator):
 
     def invoke(self, context, event):
         scene = context.scene
-        LightSelector = scene.LightSelector        
+        LightSelector = scene.LightSelector
         if not LightSelector.lights:
             return {"FINISHED"}
         if LightSelector.light_index == -1:
-            self.report(type = {'WARNING'}, message = "No object selected") 
+            self.report(type={"WARNING"}, message="No object selected")
             return {"FINISHED"}
 
-        remove_light(scene, LightSelector.lights[LightSelector.light_index].light, 
-            LightSelector.light_index)
+        remove_light(
+            scene,
+            LightSelector.lights[LightSelector.light_index].light,
+            LightSelector.light_index,
+        )
         return {"FINISHED"}
+
 
 class REAL_CAUSTICS_OT_append_selected_lights(bpy.types.Operator):
     bl_idname = "real_caustics.append_selected_lights"
@@ -118,12 +136,12 @@ class REAL_CAUSTICS_OT_append_selected_lights(bpy.types.Operator):
             add_light(scene, ob)
         return {"FINISHED"}
 
+
 class REAL_CAUSTICS_OT_remove_all_lights(bpy.types.Operator):
     bl_idname = "real_caustics.remove_all_lights"
     bl_label = "Remove all lights"
     bl_options = {"INTERNAL"}
-    
-    
+
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event)
 
@@ -131,10 +149,10 @@ class REAL_CAUSTICS_OT_remove_all_lights(bpy.types.Operator):
         scene = context.scene
         object_list = scene.LightSelector.lights
         if not object_list:
-            return {"FINISHED"}        
-        
+            return {"FINISHED"}
+
         for ob in object_list:
-            coll_name = f"light{id(ob.light)}" 
+            coll_name = f"light{id(ob.light)}"
             bpy.data.collections.remove(bpy.data.collections[coll_name])
         object_list.clear()
         scene.LightSelector.light_index = -1
@@ -152,95 +170,75 @@ class REAL_CAUSTICS_OT_refresh_list_of_lights(bpy.types.Operator):
         new_object_list = []
         for ob in object_list:
             if ob.light.users == 1 or (ob.light.users == 2 and ob.light.use_fake_user):
-                coll_name = f"light{id(ob.light)}"  
+                coll_name = f"light{id(ob.light)}"
                 bpy.data.collections.remove(bpy.data.collections[coll_name])
-                bpy.data.objects.remove(ob.catcher)         
+                bpy.data.objects.remove(ob.catcher)
             else:
-                new_object_list.append(ob.light) 
+                new_object_list.append(ob.light)
         object_list.clear()
 
         for ob in new_object_list:
             new_light = object_list.add()
             new_light.light = ob
             new_light.name = ob.name
-        scene.LightSelector.light_index = -1 
+        scene.LightSelector.light_index = -1
         return {"FINISHED"}
 
 
-
-
 class OBJECT_UL_lights(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        
-        if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            if item.light:
-                layout.label(text = item.light.name, icon = "OUTLINER_DATA_LIGHT")
-            else:
-                layout.label(text = "", icon = "OUTLINER_DATA_LIGHT")
-        elif self.layout_type in {'GRID'}:
-            layout.alignment = 'CENTER'
-            layout.label(text="", icon = "OUTLINER_DATA_LIGHT")
+    def draw_item(
+        self, context, layout, data, item, icon, active_data, active_propname, index
+    ):
 
+        if self.layout_type in {"DEFAULT", "COMPACT"}:
+            if item.light:
+                layout.label(text=item.light.name, icon="OUTLINER_DATA_LIGHT")
+            else:
+                layout.label(text="", icon="OUTLINER_DATA_LIGHT")
+        elif self.layout_type in {"GRID"}:
+            layout.alignment = "CENTER"
+            layout.label(text="", icon="OUTLINER_DATA_LIGHT")
 
 
 class Light(bpy.types.PropertyGroup):
     light: PointerProperty(
-        name = "Light",
-        type = bpy.types.Object,
+        name="Light", type=bpy.types.Object,
     )
-    name = bpy.props.StringProperty(default = "")
+    name = bpy.props.StringProperty(default="")
+
 
 class LightSelector(bpy.types.PropertyGroup):
-    lights: CollectionProperty(
-        type = Light, 
-    ) 
-    light_index: IntProperty(
-        default = 0, 
-    )
-    auto_select_lights: BoolProperty(default = True, 
-        update = update_auto_select_lights
-    ) 
-    lights_panel_is_expanded: BoolProperty(
-        default = False,
-    )  
-    selected_light: PointerProperty(
-        type = bpy.types.Object, 
-    ) 
-    selected_light_name: StringProperty(default = "",  
-        update = update_selected_light
-    ) 
+    lights: CollectionProperty(type=Light,)
+    light_index: IntProperty(default=0,)
+    auto_select_lights: BoolProperty(default=True, update=update_auto_select_lights)
+    lights_panel_is_expanded: BoolProperty(default=False,)
+    selected_light: PointerProperty(type=bpy.types.Object,)
+    selected_light_name: StringProperty(default="", update=update_selected_light)
 
 
 class LightSettings(bpy.types.PropertyGroup):
     color: FloatVectorProperty(
-        name = "",
-        description = "",
-        default = (1.0, 1.0, 1.0),
-        min = 0.0,
-        soft_max = 1.0,
-        subtype = 'COLOR',
-
+        name="",
+        description="",
+        default=(1.0, 1.0, 1.0),
+        min=0.0,
+        soft_max=1.0,
+        subtype="COLOR",
     )
     power: FloatProperty(
-        name = "",
-        description = "",
-        min = 0.0,
-        unit = "POWER",
-        precision = 1,
-        step = 10,
+        name="", description="", min=0.0, unit="POWER", precision=1, step=10,
     )
     light_type: EnumProperty(
-        name = "",
-        items = [
+        name="",
+        items=[
             ("POINT", "Point", "Point Light", "LIGHT_POINT", 1),
             ("SUN", "Sun", "Directional light", "LIGHT_SUN", 2),
             ("SPOT", "Spot", "Point Light", "LIGHT_SPOT", 3),
             ("AREA", "Area", "Point Light", "LIGHT_AREA", 4),
-        ],  
-        default = "POINT",      
-        description = "",
+        ],
+        default="POINT",
+        description="",
     )
-
 
 
 classes = [
@@ -253,14 +251,19 @@ classes = [
     REAL_CAUSTICS_OT_remove_all_lights,
     Light,
     LightSelector,
-    LightSettings
+    LightSettings,
 ]
 
-def register():   
+
+def register():
     for blender_class in classes:
         bpy.utils.register_class(blender_class)
-    bpy.types.Scene.LightSelector = PointerProperty(type = LightSelector, options = {"HIDDEN"})
-    bpy.types.Object.lights_settings = PointerProperty(type = LightSettings, options = {"HIDDEN"})
+    bpy.types.Scene.LightSelector = PointerProperty(
+        type=LightSelector, options={"HIDDEN"}
+    )
+    bpy.types.Object.lights_settings = PointerProperty(
+        type=LightSettings, options={"HIDDEN"}
+    )
 
 
 def unregister():
@@ -269,5 +272,3 @@ def unregister():
     del bpy.types.Scene.LightSelector
     del bpy.types.Object.lights_settings
 
-
-  

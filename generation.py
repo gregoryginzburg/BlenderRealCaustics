@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty
+
 # pylint: disable=E1111
 
 
@@ -17,43 +18,38 @@ class REAL_CAUSTICS_OT_generate_caustics(bpy.types.Operator):
 
 
 class CausticsSettings(bpy.types.PropertyGroup):
-    resolution_x: IntProperty(
-        name = "",
-        description = "Number of horizontal pixels in rendered image",
-        default = 1920,
-        min = 4,
-        subtype = 'PIXEL'
-    )
-    resolution_y: IntProperty(
-        name = "",
-        description = "Number of vertical pixels in rendered image",
-        default = 1080,
-        min = 4,
-        subtype = 'PIXEL'
-    )
-    synchronize_with_camera: BoolProperty(
-        name = "",
-        description = "Synchronize with active camera",
-        default = True,
-        update = update_camera_resolution,
+    resolution_percentage: IntProperty(
+        name="",
+        description="Scaling factor",
+        default=100,
+        min=0,
+        max=100,
+        subtype="PERCENTAGE",
     )
     photons_count: FloatProperty(
-        name = "",
-        description = "Number of emitted photons (millions)",
-        default = 5.0,
-        min = 0.1,
-        soft_max = 100.0,
-        step = 10,
-        precision = 1,
+        name="",
+        description="Number of emitted photons (millions)",
+        default=5.0,
+        min=0.1,
+        soft_max=100.0,
+        step=10,
+        precision=1,
     )
     search_radius: FloatProperty(
-        name = "",
-        description = "Photons radius search",
-        default = 0.015,
-        min = 0.0001,
-        precision = 4,
-        soft_max = 1.0,
-        subtype = 'DISTANCE'
+        name="",
+        description="Photons radius search",
+        default=0.015,
+        min=0.0001,
+        precision=4,
+        soft_max=1.0,
+        subtype="DISTANCE",
+    )
+    max_cache_photons: IntProperty(
+        name="",
+        description="Max numbers of photons in cache",
+        default=200,
+        min=0,
+        soft_max=10000,
     )
 
 

@@ -20,14 +20,11 @@ bl_info = {
 
 
 def register():
-    light_selector.register()   
+    light_selector.register()
     ui.register()
     generation.register()
     select_objects.register()
     catcher_selector.register()
-    
-    
-    
 
 
 def unregister():
@@ -36,5 +33,3 @@ def unregister():
     select_objects.unregister()
     catcher_selector.unregister()
     light_selector.unregister()
-    
-    
