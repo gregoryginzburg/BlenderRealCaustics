@@ -2,6 +2,7 @@ import bpy
 import os
 import ctypes
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty
+
 script_file = os.path.realpath(__file__)
 directory = os.path.dirname(script_file)
 path = directory + "\\engine\\engine.dll"
