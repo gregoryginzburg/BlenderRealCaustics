@@ -1,6 +1,11 @@
 import bpy
+import os
+import ctypes
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty
+path = os.path.abspath("engine//engine.dll")
+engine = ctypes.CDLL(path)
 
+engine.main.restype = ctypes.c_int
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable
@@ -16,6 +21,7 @@ class REAL_CAUSTICS_OT_generate_caustics(bpy.types.Operator):
     bl_options = {"INTERNAL"}
 
     def execute(self, context):
+        engine.main()
         return {"FINISHED"}
 
 

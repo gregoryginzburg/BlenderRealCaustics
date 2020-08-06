@@ -9,11 +9,12 @@ from bpy.props import (
     StringProperty,
     EnumProperty,
 )
+from source.utils import alert
 
-# from utils import alert
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable
+
 
 def set_object_settings(scene):
     pass
@@ -51,26 +52,17 @@ def update_auto_select_lights(self, context):
     return None
 
 
-def alert(context):
-    def draw(self, context):
-        self.layout.label(text="Refresh the list")
-
-    context.window_manager.popup_menu(
-        draw, title="No light with this name", icon="ERROR"
-    )
-    return None
-
-
 def update_selected_light(self, context):
     if self.selected_light_name == "":
         return None
     try:
         light = bpy.data.objects[self.selected_light_name]
     except KeyError:
-        # alert(context,
-        #     message = "No object with this name in the list",
-        #     top_title = "Refresh the list",
-        # )
+        alert(
+            context,
+            message="No object with this name in the list",
+            top_title="Refresh the list",
+        )
         self.selected_object = None
         return None
     self.selected_light = light

@@ -8,9 +8,9 @@ from bpy.props import (
     FloatVectorProperty,
     StringProperty,
 )
+from source.utils import alert
 
 
-# from utils import alert
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable
@@ -132,10 +132,11 @@ def update_selected_caustic_object_name_changed(self, context):
     try:
         ob = bpy.data.objects[self.selected_caustic_object_name]
     except KeyError:
-        # alert(context,
-        #     message = "No object with this name in the list",
-        #     top_title = "Refresh the list",
-        # )
+        alert(
+            context,
+            message="No object with this name in the list",
+            top_title="Refresh the list",
+        )
         self.selected_caustic_object = None
         return None
     self.selected_caustic_object = ob

@@ -8,11 +8,13 @@ from bpy.props import (
     FloatVectorProperty,
     StringProperty,
 )
+from source.utils import alert
 
 # import utils
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable
+
 
 def set_catcher_settings():
     pass
@@ -57,10 +59,11 @@ def update_selected_catcher(self, context):
     try:
         ob = bpy.data.objects[self.selected_catcher_name]
     except KeyError:
-        # alert(context,
-        #     message = "No object with this name in the list",
-        #     top_title = "Refresh the list",
-        # )
+        alert(
+            context,
+            message="No object with this name in the list",
+            top_title="Refresh the list",
+        )
         self.selected_catcher = None
         return None
     self.selected_catcher = ob
@@ -81,17 +84,13 @@ class REAL_CAUSTICS_OT_auto_select_catchers(bpy.types.Operator):
                 continue
             nodes = ob.active_material.node_tree.nodes
             for node in nodes:
-                if (
-                    node.bl_idname != "ShaderNodeBsdfDiffuse"
-                    and node.bl_idname != "ShaderNodeBsdfPrincipled"
-                ):
+                if (node.bl_idname != "ShaderNodeBsdfDiffuse"
+                        and node.bl_idname != "ShaderNodeBsdfPrincipled"):
                     continue
                 elif node.bl_idname == "ShaderNodeBsdfPrincipled":
                     inputs = node.inputs
-                    if (
-                        inputs[4].default_value < 0.05
-                        or inputs[15].default_value < 0.05
-                    ):
+                    if (inputs[4].default_value < 0.05
+                            or inputs[15].default_value < 0.05):
                         add_catcher(scene, ob)
                     else:
                         continue
@@ -158,9 +157,8 @@ class REAL_CAUSTICS_OT_refresh_list_of_catchers(bpy.types.Operator):
         object_list = CatcherSelector.catchers
         new_object_list = []
         for ob in object_list:
-            if ob.catcher.users == 1 or (
-                ob.catcher.users == 2 and ob.catcher.use_fake_user
-            ):
+            if ob.catcher.users == 1 or (ob.catcher.users == 2
+                                         and ob.catcher.use_fake_user):
                 coll_name = f"catcher{id(ob.catcher)}"
                 bpy.data.collections.remove(bpy.data.collections[coll_name])
                 bpy.data.objects.remove(ob.catcher)
@@ -197,9 +195,8 @@ class REAL_CAUSTICS_OT_remove_all_catchers(bpy.types.Operator):
 
 
 class OBJECT_UL_caustic_catchers(bpy.types.UIList):
-    def draw_item(
-        self, context, layout, data, item, icon, active_data, active_propname, index
-    ):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
 
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             if item.catcher:
@@ -213,20 +210,22 @@ class OBJECT_UL_caustic_catchers(bpy.types.UIList):
 
 class Catcher(bpy.types.PropertyGroup):
     catcher: PointerProperty(
-        name="Catcher", type=bpy.types.Object,
+        name="Catcher",
+        type=bpy.types.Object,
     )
     name = bpy.props.StringProperty(default="")
 
 
 class CatcherSelector(bpy.types.PropertyGroup):
-    catchers: CollectionProperty(type=Catcher,)
-    catchers_index: IntProperty(default=0,)
+    catchers: CollectionProperty(type=Catcher, )
+    catchers_index: IntProperty(default=0, )
     auto_select_catchers: BoolProperty(
-        default=True, update=update_auto_select_catchers,
+        default=True,
+        update=update_auto_select_catchers,
     )
-    catchers_panel_is_expanded: BoolProperty(default=False,)
-    selected_catcher: PointerProperty(type=bpy.types.Object,)
-    selected_catcher_name: StringProperty(update=update_selected_catcher,)
+    catchers_panel_is_expanded: BoolProperty(default=False, )
+    selected_catcher: PointerProperty(type=bpy.types.Object, )
+    selected_catcher_name: StringProperty(update=update_selected_catcher, )
 
 
 classes = [
@@ -245,13 +244,11 @@ classes = [
 def register():
     for blender_class in classes:
         bpy.utils.register_class(blender_class)
-    bpy.types.Scene.CatcherSelector = PointerProperty(
-        type=CatcherSelector, options={"HIDDEN"}
-    )
+    bpy.types.Scene.CatcherSelector = PointerProperty(type=CatcherSelector,
+                                                      options={"HIDDEN"})
 
 
 def unregister():
     for blender_class in classes:
         bpy.utils.unregister_class(blender_class)
     del bpy.types.Scene.CatcherSelector
-

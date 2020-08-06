@@ -18,9 +18,7 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         col.operator("real_caustics.generate_caustics")
         col.separator(factor=0.5)
         col = layout.column()
-        # Label - settings
-        col = layout.column()
-        col.label(text="Settings:")
+        
 
         # Box - settings
         box = layout.box()
