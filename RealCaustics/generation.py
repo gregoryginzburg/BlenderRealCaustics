@@ -2,10 +2,12 @@ import bpy
 import os
 import ctypes
 from bpy.props import IntProperty, BoolProperty, FloatProperty, PointerProperty
-path = os.path.abspath("engine//engine.dll")
+script_file = os.path.realpath(__file__)
+directory = os.path.dirname(script_file)
+path = directory + "\\engine\\engine.dll"
 engine = ctypes.CDLL(path)
 
-engine.main.restype = ctypes.c_int
+#engine.main.restype = ctypes.c_int
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable

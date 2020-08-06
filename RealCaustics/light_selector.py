@@ -9,7 +9,7 @@ from bpy.props import (
     StringProperty,
     EnumProperty,
 )
-from source.utils import alert
+from RealCaustics.utils import alert
 
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member

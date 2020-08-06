@@ -8,7 +8,7 @@ from bpy.props import (
     FloatVectorProperty,
     StringProperty,
 )
-from source.utils import alert
+from RealCaustics.utils import alert
 
 # import utils
 # pylint: disable=assignment-from-no-return
