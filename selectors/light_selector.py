@@ -9,15 +9,20 @@ from bpy.props import (
     StringProperty,
     EnumProperty,
 )
-from BlendRealCaustics.utils import alert
+# pylint: disable=relative-beyond-top-level
+from ..utils import alert
+#from .. import utils
 
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable
 
 
-def set_object_settings(scene):
-    pass
+def set_object_settings(light):
+    settings = light.lights_settings
+    settings.color = light.data.color
+    settings.power = light.data.energy
+    settings.type = light.data.type 
 
 
 def add_light(scene, light):
@@ -29,7 +34,7 @@ def add_light(scene, light):
     new_light.light = light
     new_light.name = light.name
     scene.LightSelector.light_index = len(scene.LightSelector.lights) - 1
-    set_object_settings(scene)
+    set_object_settings(light)
     return None
 
 

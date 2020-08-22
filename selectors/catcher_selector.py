@@ -8,9 +8,9 @@ from bpy.props import (
     FloatVectorProperty,
     StringProperty,
 )
-from BlendRealCaustics.utils import alert
+# pylint: disable=relative-beyond-top-level
+from ..utils import alert
 
-# import utils
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable

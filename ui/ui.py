@@ -11,15 +11,16 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         # Generate Button
+        #layout.label(text = scene.test_string)
         CausticsSettings = scene.caustics_settings
         col = layout.column()
 
         col.scale_y = 2
         col.operator("real_caustics.generate_caustics")
-        depsgraph = context.evaluated_depsgraph_get()
         col.operator("real_caustics.test_free", text="Free")
-        test= str(depsgraph.id_type_updated("OBJECT"))
-        col.label(text = test)
+        col.operator("real_caustics.test")
+
+        col.label(text = scene.test_string)
         col.separator(factor=0.5)
         col = layout.column()
         
