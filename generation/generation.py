@@ -8,20 +8,32 @@ from timeit import default_timer as timer
 directory = __file__.split("\\generation\\generation.py")[0]
 path = directory + "\\engine\\Real Caustics.dll"
 engine = ct.CDLL(path)
+path2 = directory + "\\engine\\Project2.dll"
 
 
 # pylint: disable=assignment-from-no-return
 # pylint: disable=no-member
 # pylint: disable=unused-variable
-
+def print_m(m):
+    print(m[0][0], " ", m[0][1], " ", m[0][2], " ", m[0][3])
+    print(m[1][0], " ", m[1][1], " ", m[1][2], " ", m[1][3])
+    print(m[2][0], " ", m[2][1], " ", m[2][2], " ", m[2][3])
+    print(m[3][0], " ", m[3][1], " ", m[3][2], " ", m[3][3])
+                
 
 class vec3(ct.Structure):
     _fields_ = [("x", ct.c_float), ("y", ct.c_float), ("z", ct.c_float)]
 
+class vec4(ct.Structure):
+    _fields_ = [("x", ct.c_float), ("y", ct.c_float), ("z", ct.c_float), ("w", ct.c_float)]
+
 class colorf(ct.Structure):
     _fields_ = [("r", ct.c_float), ("g", ct.c_float), ("b", ct.c_float)]
 
-
+class matrix_4x4(ct.Structure):
+    _fields_ = [("i", vec4), ("j", vec4), ("k", vec4), ("w", vec4)]
+test1 = ct.CDLL(path2)
+test1.test.argtypes = (ct.c_longlong, ct.c_int, ct.c_int, vec3, ct.c_float, ct.c_float, ct.POINTER(ct.c_char))
 # :rotation - in degrees
 class Python_Light(ct.Structure):
     _fields_ = [("type", ct.c_char),
@@ -60,6 +72,7 @@ class Python_Material(ct.Structure):
 engine.init.argtypes = [ct.c_int, ct.c_int, ct.c_float,
                         ct.POINTER(ct.c_longlong),
                         ct.c_uint,
+                        ct.POINTER(matrix_4x4),
                         ct.POINTER(ct.c_uint),
                         ct.POINTER(ct.c_uint),
                         ct.c_uint,
@@ -73,7 +86,8 @@ engine.init.argtypes = [ct.c_int, ct.c_int, ct.c_float,
                         ct.c_uint,
                         ct.POINTER(Python_Material),
                         ct.c_uint,
-                        ct.POINTER(ct.c_int)]
+                        ct.POINTER(ct.c_int),
+                        ct.POINTER(ct.c_char)]
 
 
 
@@ -182,6 +196,9 @@ class REAL_CAUSTICS_OT_test_free(bpy.types.Operator):
         number_of_verts_tris_cl = ct.c_uint * number_of_meshes
         # :mesh_pointers 
         mesh_pointers = mesh_pointers_cl()
+        # :mesh_matrices
+        mesh_matrices_cl = matrix_4x4 * number_of_meshes
+        mesh_matrices = mesh_matrices_cl()
         # :meshes_number_of_verts
         meshes_number_of_verts = number_of_verts_tris_cl()
         # :meshes_number_of_tris
@@ -231,19 +248,37 @@ class REAL_CAUSTICS_OT_test_free(bpy.types.Operator):
         # 67 - C
         materials[0] = Python_Material(67, 0.0, colorf(0.0, 0.0, 0.0))
 
+
+        depsgraph = context.evaluated_depsgraph_get()
+
         for i, catcher_ob in enumerate(CatcherSelector.catchers):
             ob = catcher_ob.catcher
-            
+            #print(ob.matrix_world)
+            ob = ob.evaluated_get(depsgraph)
             mesh_pointers[i] = ob.data.as_pointer()
+            m = ob.matrix_world
+
+            mesh_matrices[i] = matrix_4x4(vec4(m[0][0], m[1][0], m[2][0], m[3][0]),
+                                          vec4(m[0][1], m[1][1], m[2][1], m[3][1]),
+                                          vec4(m[0][2], m[1][2], m[2][2], m[3][2]),
+                                          vec4(m[0][3], m[1][3], m[2][3], m[3][3]))
             meshes_number_of_verts[i] = len(ob.data.vertices)
             meshes_number_of_tris[i] = len(ob.data.polygons)
             meshes_material_idx[i] = 0 
 
             
-        ii = 1
+        material_idx = 1
         for i, caustic_ob in enumerate(ObjectSelector.caustic_objects, number_of_catchers):
             ob = caustic_ob.caustic_object
+            #print(ob.matrix_world)
+            ob = ob.evaluated_get(depsgraph)
             mesh_pointers[i] = ob.data.as_pointer()
+            m = ob.matrix_world
+
+            mesh_matrices[i] = matrix_4x4(vec4(m[0][0], m[1][0], m[2][0], m[3][0]),
+                                          vec4(m[0][1], m[1][1], m[2][1], m[3][1]),
+                                          vec4(m[0][2], m[1][2], m[2][2], m[3][2]),
+                                          vec4(m[0][3], m[1][3], m[2][3], m[3][3]))
             meshes_number_of_verts[i] = len(ob.data.vertices)
             meshes_number_of_tris[i] = len(ob.data.polygons)
             ObjectSettings = ob.ObjectSettings
@@ -251,10 +286,10 @@ class REAL_CAUSTICS_OT_test_free(bpy.types.Operator):
                            ObjectSettings.color.g,
                            ObjectSettings.color.b)
             # 71 - G
-            materials[ii] = Python_Material(71, ObjectSettings.ior, color)
-            meshes_material_idx[i] = ii
+            materials[material_idx] = Python_Material(71, ObjectSettings.ior, color)
+            meshes_material_idx[i] = material_idx
 
-            i += 1
+            material_idx += 1
 
         for i, light_ob in enumerate(LightSelector.lights):
             ob = light_ob.light
@@ -265,11 +300,12 @@ class REAL_CAUSTICS_OT_test_free(bpy.types.Operator):
 
             lights[i].position = pos
             lights[i].rotation = rot
-            lights[i].power = 1
+            lights[i].power = 38
 
         engine.init(number_of_photons, n_closest, radius,
                     mesh_pointers,
                     number_of_meshes,
+                    mesh_matrices,
                     meshes_number_of_verts,
                     meshes_number_of_tris,
                     camera_x,
@@ -283,7 +319,8 @@ class REAL_CAUSTICS_OT_test_free(bpy.types.Operator):
                     number_of_lights,
                     materials,
                     number_of_materials,
-                    meshes_material_idx)
+                    meshes_material_idx,
+                    "caustic_set.hdri_path".encode('utf-8'))
         engine.main()
         return {"FINISHED"}
 
@@ -299,7 +336,24 @@ class REAL_CAUSTICS_OT_test(bpy.types.Operator):
 
     
     def execute(self, context):
-        
+        ob = context.active_object
+
+        depsgraph = context.evaluated_depsgraph_get()
+        object_eval = ob.evaluated_get(depsgraph)
+        mesh_eval = object_eval.data
+
+        mesh = ob.data
+        mesh_ptr = mesh.as_pointer()
+        verts = len(mesh.vertices)
+        dir_view = bpy.data.objects["Empty"].location
+        vector = vec3(dir_view.x, dir_view.y, dir_view.z)
+        #text = ct.c_wchar_p("Hi from c++")
+        #text = ct.cast(ct.POINTER(ct.c_char), text)
+        test1.test(mesh_ptr, verts, 0, vector, context.scene.caustics_settings.search_radius, context.scene.caustics_settings.photons_count,
+        context.scene.caustics_settings.hdri_path.encode('utf-8')) 
+        print("\n")
+        mesh = context.active_object.data
+        mesh.update()
         return {'FINISHED'}
 class CausticsSettings(bpy.types.PropertyGroup):
     resolution_percentage: IntProperty(
@@ -334,6 +388,9 @@ class CausticsSettings(bpy.types.PropertyGroup):
         default=200,
         min=0,
         soft_max=10000,
+    )
+    hdri_path: bpy.props.StringProperty(
+        subtype = 'FILE_PATH',
     )
 
 

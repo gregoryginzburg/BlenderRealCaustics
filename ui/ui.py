@@ -46,6 +46,9 @@ class VIEW3D_PT_real_caustics(bpy.types.Panel):
         col.prop(CausticsSettings, "search_radius")
         col.prop(CausticsSettings, "max_cache_photons")
 
+        col = box.column()
+        col.prop(CausticsSettings, "hdri_path")
+
         # -------------------------------------------------
         # CAUSTIC OBJECT SELECTOR
         # -------------------------------------------------
