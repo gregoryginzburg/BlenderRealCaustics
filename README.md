@@ -1,1 +1,1 @@
-# Real Caustics Addon
+# Real Caustics Blender Addon
