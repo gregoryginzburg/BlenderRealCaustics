@@ -1,13 +1,13 @@
 # RealCaustics
 
 ## Обзор
-RealCaustics - это аддон для Blender, предназначенный для рендеринга реалистичных каустик с использованием C++ рендерингового движка. Этот аддон бесшовно интегрируется с Blender, улучшая визуальную реалистичность 3D-сцен за счет детализированных эффектов каустик.
+RealCaustics - это плагин для Blender, предназначенный для рендеринга реалистичных каустик с использованием C++ рендерингового движка. Этот плагин бесшовно интегрируется с Blender, улучшая визуальную реалистичность 3D-сцен за счет детализированных эффектов каустик.
 
-## UI аддона и пример работы
+## UI плагина и пример работы
 - UI:
-![alt text](1)
+![alt text](https://github.com/gregoryginzburg/BlenderRealCaustics/blob/master/examples/ui_example.png)
 - Пример работы:
-![alt text](2)
+![alt text](https://github.com/gregoryginzburg/BlenderRealCaustics/blob/master/examples/render_example.png)
 
 ## Особенности
 - **C++ Рендеринговый Движок**: Использует мощный C++ DLL для эффективного рендеринга каустик.
@@ -15,14 +15,14 @@ RealCaustics - это аддон для Blender, предназначенный 
 - **Выборочная Обработка Объектов**: Включает селекторы для источников света и объектов, улавливающих каустику, обеспечивая генерацию каустик там, где это наиболее необходимо.
 
 ## Установка
-1. Скачайте аддон BlenderRealCaustics.
+1. Скачайте плагин BlenderRealCaustics.
    ```
    git clone https://github.com/gregoryginzburg/RealCausticsEngine.git
    ```
 2. Скомпилируйте проект [RealCausticsEngine](https://github.com/gregoryginzburg/RealCausticsEngine/tree/Vertex_Merging) и поместите DLL-файл в папку `engine`.
 3. В Blender перейдите в `Edit > Preferences > Add-ons`.
-4. Нажмите `Install` и найдите скачанный файл аддона.
-5. Активируйте аддон из списка.
+4. Нажмите `Install` и найдите скачанный файл плагина.
+5. Активируйте плагин из списка.
 
 
 ## Использование
